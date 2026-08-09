@@ -322,7 +322,7 @@ nav { position: fixed; top: 14px; left: 0; right: 0; z-index: 50; display: flex;
   background: radial-gradient(50% 55% at 50% 42%, rgba(109,156,187,0.4), transparent 70%);
   filter: blur(10px);
 }
-.stage-layer { position: absolute; will-change: transform; }
+.stage-layer { position: absolute; will-change: transform; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
 .stage-chat { left: 50%; top: 34px; transform: translateX(-50%); width: min(540px, 92vw); z-index: 2; }
 .stage-chat .window { text-align: left; }
 .stage-chat .window-body { padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 12px; }
@@ -692,6 +692,9 @@ footer {
 .voice-stage { position: relative; }
 .voice-stage .composer-text .fixed { color: var(--text); }
 .voice-stage .composer-text, .voice-stage .bubble { white-space: pre-line; text-align: left; }
+/* slots sized for their eventual content: the stage never changes height */
+.voice-stage #vUserBubble { min-height: 4.2em; min-width: 300px; }
+.voice-stage #vReply { min-height: 2.4em; min-width: 340px; }
 /* demos never reflow the page: slots are reserved, only opacity moves */
 .bubble.ghost { visibility: hidden; }
 .voice-stage .composer-text { min-height: 3.9em; }
@@ -765,6 +768,14 @@ footer {
 .copilot-note { grid-column: 2; margin-top: 3px; color: var(--muted, rgba(51,56,61,0.6)); font-size: 13px; }
 
 /* ---------------- the day arc ---------------- */
+.manifesto-when {
+  margin: 0 0 22px;
+  color: var(--accent);
+  font: 600 12px ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+}
 .dusk-bridge { height: clamp(160px, 26vh, 300px); background: linear-gradient(180deg, var(--bg), var(--night-bg)); }
 .night {
   --bg: #20242a;
@@ -870,6 +881,7 @@ footer {
 <!-- ================= MANIFESTO ================= -->
 <section class="manifesto">
   <div class="wrap">
+    <p class="manifesto-when" aria-hidden="true">yesterday</p>
     <p id="manifesto">You're running four agents in six terminal tabs. <span class="dim">One finished an hour ago. One is stuck waiting for a yes. You have no idea which.</span></p>
   </div>
 </section>

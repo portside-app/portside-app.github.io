@@ -692,9 +692,20 @@ footer {
 .voice-stage { position: relative; }
 .voice-stage .composer-text .fixed { color: var(--text); }
 .voice-stage .composer-text, .voice-stage .bubble { white-space: pre-line; text-align: left; }
-/* slots sized for their eventual content: the stage never changes height */
-.voice-stage #vUserBubble { min-height: 4.2em; min-width: 300px; }
-.voice-stage #vReply { min-height: 2.4em; min-width: 340px; }
+/* the stage is a fixed frame; every player has an absolute berth.
+   Nothing can move anything else — jitter is structurally impossible. */
+.voice-stage { position: relative; height: 420px; display: block; }
+.voice-stage .bubble { position: absolute; margin: 0; }
+.voice-stage .bubble.agent:first-child { top: 0; left: 0; }
+.voice-stage #vUserBubble { top: 0; right: 0; max-width: 62%; }
+.voice-stage #vReply { top: 120px; left: 0; max-width: 62%; }
+.voice-stage .composer { position: absolute; left: 0; right: 0; bottom: 0; }
+.voice-stage .composer-text { min-height: 0; }
+@media (max-width: 700px) {
+  .voice-stage { height: 470px; }
+  .voice-stage #vUserBubble, .voice-stage #vReply { max-width: 88%; }
+  .voice-stage #vReply { top: 150px; }
+}
 /* demos never reflow the page: slots are reserved, only opacity moves */
 .bubble.ghost { visibility: hidden; }
 .voice-stage .composer-text { min-height: 3.9em; }

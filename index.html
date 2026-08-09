@@ -690,6 +690,10 @@ footer {
 .voice-stage { position: relative; }
 .voice-stage .composer-text .fixed { color: var(--text); }
 .voice-stage .composer-text, .voice-stage .bubble { white-space: pre-line; text-align: left; }
+/* demos never reflow the page: slots are reserved, only opacity moves */
+.bubble.ghost { visibility: hidden; }
+.voice-stage .composer-text { min-height: 3.9em; }
+.voice-stage .bubble, .hero .window-body .bubble { transition: opacity 0.3s ease; }
 .voice-stage .composer-text.polished { animation: polish-glow 0.6s ease; }
 @keyframes polish-glow {
   0% { text-shadow: 0 0 14px rgba(74, 119, 153, 0.55); }
@@ -830,8 +834,8 @@ footer {
         </div>
         <div class="window-body">
           <div class="bubble agent"><span class="think">Good evening. Three agents on deck. What are we building?</span></div>
-          <div class="bubble" id="heroUserBubble" hidden>bring up the api and the indexer</div>
-          <div class="bubble agent" id="heroReply" hidden>Both running. <b>:3000</b> and <b>:8090</b> healthy. I'm watching them.</div>
+          <div class="bubble ghost" id="heroUserBubble">bring up the api and the indexer</div>
+          <div class="bubble agent ghost" id="heroReply">Both running. <b>:3000</b> and <b>:8090</b> healthy. I'm watching them.</div>
           <div class="composer">
             <span class="composer-text"><span id="heroTyped"></span><span class="caret" aria-hidden="true"></span></span>
             <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
@@ -899,8 +903,8 @@ footer {
     </div>
     <div class="chat-stage voice-stage rv rv-d1">
       <div class="bubble agent"><span class="think">Good evening. What are we shipping?</span></div>
-      <div class="bubble" id="vUserBubble" hidden></div>
-      <div class="bubble agent" id="vReply" hidden></div>
+      <div class="bubble ghost" id="vUserBubble">&nbsp;</div>
+      <div class="bubble agent ghost" id="vReply">&nbsp;</div>
       <div class="composer">
         <span class="composer-text"><span id="voiceTyped"></span><span class="caret" aria-hidden="true"></span></span>
         <span class="wave on" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
@@ -1074,7 +1078,7 @@ footer {
       const [raw, polished, reply] = takes[take];
       take = (take + 1) % takes.length;
       vTyped.textContent = ""; vPill.hidden = true; vListen.hidden = false;
-      vBubble.hidden = true; vReply.hidden = true;
+      vBubble.classList.add("ghost"); vReply.classList.add("ghost");
       wave.classList.add("on");
       vTyped.parentElement.classList.remove("polished");
       let i = 0;
@@ -1090,13 +1094,13 @@ footer {
             setTimeout(() => {
               // send: the polished line becomes the message
               vBubble.textContent = polished;
-              vBubble.hidden = false;
+              vBubble.classList.remove("ghost");
               vTyped.textContent = "";
               vTyped.parentElement.classList.remove("polished");
               vPill.hidden = true;
               setTimeout(() => {
                 vReply.textContent = reply;
-                vReply.hidden = false;
+                vReply.classList.remove("ghost");
                 setTimeout(play, 3400);
               }, 900);
             }, 1400);
@@ -1106,8 +1110,8 @@ footer {
       setTimeout(step, 600);
     };
     if (reduce) {
-      vBubble.textContent = takes[0][1]; vBubble.hidden = false;
-      vReply.textContent = takes[0][2]; vReply.hidden = false;
+      vBubble.textContent = takes[0][1]; vBubble.classList.remove("ghost");
+      vReply.textContent = takes[0][2]; vReply.classList.remove("ghost");
     }
     else {
       const vio = new IntersectionObserver((es) => {
@@ -1154,16 +1158,16 @@ footer {
   if (heroTyped) {
     const cmd = "bring up the api and the indexer";
     if (reduce) {
-      heroBubble.hidden = false; heroReply.hidden = false;
+      heroBubble.classList.remove("ghost"); heroReply.classList.remove("ghost");
     } else {
       let i = 0;
       const step = () => {
         heroTyped.textContent = cmd.slice(0, ++i);
         if (i < cmd.length) setTimeout(step, 36 + Math.random() * 40);
         else setTimeout(() => {
-          heroBubble.hidden = false; heroTyped.textContent = "";
+          heroBubble.classList.remove("ghost"); heroTyped.textContent = "";
           setTimeout(() => {
-            heroReply.hidden = false;
+            heroReply.classList.remove("ghost");
 
           }, 950);
         }, 650);
@@ -1203,26 +1207,6 @@ footer {
     mio.observe(man);
   }
 
-  /* composer typing (storytelling: dictation lands in the box) */
-  const typed = document.getElementById("typed");
-  const bubble = document.getElementById("userBubble");
-  const phrase = "yes, and watch the memory this time";
-  let started = false;
-  const typeIt = () => {
-    if (started) return; started = true;
-    if (reduce) { typed.textContent = phrase; return; }
-    let i = 0;
-    const step = () => {
-      typed.textContent = phrase.slice(0, ++i);
-      if (i < phrase.length) setTimeout(step, 34 + Math.random() * 46);
-      else setTimeout(() => { bubble.hidden = false; typed.textContent = ""; }, 900);
-    };
-    setTimeout(step, 500);
-  };
-  const tio = new IntersectionObserver((entries) => {
-    for (const e of entries) if (e.isIntersecting) { typeIt(); tio.unobserve(e.target); }
-  }, { threshold: 0.5 });
-  tio.observe(document.querySelector(".composer"));
 
 
 })();

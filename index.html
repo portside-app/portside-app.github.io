@@ -1,0 +1,1251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portside · The cockpit for your agents</title>
+<meta name="description" content="Portside is the macOS cockpit for every coding agent you run. Steer by voice, catch what breaks at 2 AM, ship faster. Runs on the Claude Code or Codex subscription you already pay for." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234a7799'/%3E%3Cg fill='none' stroke='%23fbfaf7' stroke-width='2.6' stroke-linecap='round'%3E%3Ccircle cx='16' cy='8' r='3'/%3E%3Cpath d='M16 11v14'/%3E%3Cpath d='M7 17c0 5.5 4.5 8 9 8s9-2.5 9-8'/%3E%3Cpath d='M11.5 15h9'/%3E%3C/g%3E%3C/svg%3E" />
+<style>
+/* ============================================================
+   Portside landing v2. Symmetric, centered, cinematic.
+   Tokens ported 1:1 from the app (App.css).
+   Radius system: buttons = pill, windows/cards = 20px, inner = 12px.
+   ============================================================ */
+:root {
+  --bg: #edece7;
+  --card: #fbfaf7;
+  --text: #33383d;
+  --muted: rgba(51, 56, 61, 0.55);
+  --sep: rgba(51, 56, 61, 0.14);
+  --accent: #4a7799;
+  --accent-h: #3f688a;
+  --tint: rgba(120, 126, 128, 0.12);
+  --green: #4f9a7e;
+  --amber: #b0813c;
+  --red: #c05b4a;
+  --redbg: rgba(192, 91, 74, 0.11);
+  --glass: rgba(251, 250, 247, 0.62);
+  --glass-edge: rgba(255, 255, 255, 0.65);
+  --sh-sm: 0 1px 3px rgba(51, 56, 61, 0.07);
+  --sh-md: 0 4px 16px rgba(51, 56, 61, 0.1);
+  --sh-lg: 0 24px 60px rgba(51, 56, 61, 0.2);
+  --ink-bg: #20242a;
+  --ink-text: #e9eae6;
+  --ink-muted: rgba(233, 234, 230, 0.58);
+  --ink-accent: #6d9cbb;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+::selection { background: rgba(74, 119, 153, 0.25); }
+img, svg, video { max-width: 100%; display: block; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------------- reveal engine ---------------- */
+.rv {
+  opacity: 0; transform: translateY(30px) scale(0.985);
+  filter: blur(6px);
+  transition:
+    opacity 1s var(--ease), transform 1s var(--ease), filter 1s var(--ease);
+}
+.rv.in { opacity: 1; transform: none; filter: none; }
+.rv-d1 { transition-delay: 0.1s; }
+.rv-d2 { transition-delay: 0.2s; }
+.rv-d3 { transition-delay: 0.3s; }
+.rv-d4 { transition-delay: 0.4s; }
+@media (prefers-reduced-motion: reduce) {
+  .rv { opacity: 1; transform: none; filter: none; transition: none; }
+  * { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; }
+  html { scroll-behavior: auto; }
+}
+
+/* ---------------- nav (symmetric: brand / links / cta) ---------------- */
+nav { position: fixed; top: 14px; left: 0; right: 0; z-index: 50; display: flex; justify-content: center; pointer-events: none; }
+.navbar {
+  pointer-events: auto;
+  width: min(1160px, calc(100% - 32px));
+  height: 58px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  padding: 0 10px 0 22px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), var(--sh-md);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .navbar { background: var(--card); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -0.02em; justify-self: start; }
+.brand-mark {
+  width: 26px; height: 26px; border-radius: 8px; flex: none;
+  background: #fbfaf7;
+  display: grid; place-items: center;
+  color: #4a7799;
+  font: 700 13px/1 ui-monospace, "SF Mono", Menlo, monospace;
+  box-shadow: inset 0 0 0 1px rgba(51, 56, 61, 0.1), 0 1px 3px rgba(51, 56, 61, 0.18);
+}
+.nav-links { display: flex; gap: 26px; font-size: 14px; color: var(--muted); justify-self: center; }
+.nav-links a { position: relative; padding: 4px 0; transition: color 0.25s; }
+.nav-links a::after {
+  content: ""; position: absolute; left: 50%; bottom: 0; width: 0; height: 2px;
+  border-radius: 2px; background: var(--accent);
+  transition: width 0.3s var(--ease), left 0.3s var(--ease);
+}
+.nav-links a:hover { color: var(--text); }
+.nav-links a:hover::after { width: 100%; left: 0; }
+.nav-cta { justify-self: end; }
+.btn {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 0; cursor: pointer; white-space: nowrap;
+  border-radius: 999px; font: inherit; font-size: 15px; font-weight: 600;
+  padding: 12px 24px;
+  background: var(--accent); color: #fbfaf7;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 8px rgba(51,56,61,0.22);
+  transition: background 0.25s, transform 0.25s var(--ease), box-shadow 0.25s;
+}
+.btn::after {
+  content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s var(--ease);
+}
+.btn:hover { background: var(--accent-h); transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 22px rgba(51,56,61,0.3); }
+.btn:hover::after { left: 130%; }
+.btn:active { transform: translateY(0) scale(0.98); }
+.btn.small { padding: 9px 18px; font-size: 14px; }
+.btn.ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--sep); }
+.btn.ghost:hover { background: var(--tint); box-shadow: inset 0 0 0 1px var(--sep); }
+.btn.ghost::after { display: none; }
+@media (max-width: 760px) { .nav-links { display: none; } .navbar { grid-template-columns: 1fr auto; } }
+
+/* ---------------- animated scene fields (procedural, no footage) ---------------- */
+.vfield { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.vfield .scrim { position: absolute; inset: 0; }
+
+/* the sky: gradient atmosphere, drifting clouds, rolling hills */
+.sky-base {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(80% 50% at 50% 100%, rgba(250,248,240,0.55), transparent 65%),
+    linear-gradient(to bottom, #4a7aa8 0%, #7aa6c9 34%, #b3cdde 58%, #dde6e2 78%, #edece7 100%);
+}
+.sun {
+  position: absolute; top: 6%; left: 50%; transform: translateX(-50%);
+  width: 46vmin; height: 46vmin; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,252,238,0.5), transparent 65%);
+}
+.cloud {
+  position: absolute; left: -45vw;
+  border-radius: 999px;
+  background: radial-gradient(55% 60% at 50% 45%, rgba(255,255,255,0.92), rgba(255,255,255,0) 72%);
+  filter: blur(14px);
+}
+.cloud.c1 { top: 9%;  width: 44vw; height: 11vw; opacity: 0.9; }
+.cloud.c2 { top: 22%; width: 34vw; height: 9vw;  opacity: 0.7; }
+.cloud.c3 { top: 33%; width: 52vw; height: 12vw; opacity: 0.55; }
+.cloud.c4 { top: 16%; width: 26vw; height: 7vw;  opacity: 0.8; }
+.cloud.c5 { top: 42%; width: 40vw; height: 10vw; opacity: 0.4; }
+@media (prefers-reduced-motion: no-preference) {
+  .cloud { animation: cdrift linear infinite; }
+  .cloud.c1 { animation-duration: 110s; animation-delay: -30s; }
+  .cloud.c2 { animation-duration: 150s; animation-delay: -90s; }
+  .cloud.c3 { animation-duration: 190s; animation-delay: -60s; }
+  .cloud.c4 { animation-duration: 90s;  animation-delay: -70s; }
+  .cloud.c5 { animation-duration: 230s; animation-delay: -120s; }
+  @keyframes cdrift { to { transform: translateX(190vw); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cloud.c1 { left: 8vw; } .cloud.c2 { left: 52vw; } .cloud.c3 { left: 28vw; }
+  .cloud.c4 { left: 70vw; } .cloud.c5 { left: -6vw; }
+}
+/* ---- the sea: Hokusai's Great Wave (public domain, Wikimedia scan) ----
+   Dissolves into the Vanta clouds above and the paper below. */
+.artsea {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 54vh;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to top, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 68%, transparent 100%);
+}
+.artsea img {
+  width: 100%; height: 118%;
+  object-fit: cover; object-position: 50% 82%;
+  filter: saturate(0.94) brightness(1.02);
+  transform-origin: 50% 70%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .artsea img { animation: kenburns 46s ease-in-out infinite alternate; }
+  @keyframes kenburns {
+    from { transform: scale(1) translateY(0); }
+    to { transform: scale(1.09) translateY(-2.5%); }
+  }
+}
+.mist {
+  position: absolute; top: -26px; left: -4%; right: -4%; height: 70px;
+  background: rgba(240,240,238,0.6);
+  filter: blur(24px);
+  border-radius: 50%;
+}
+
+/* Vanta WebGL sky sits above the CSS fallback; fades in once ready */
+
+/* the night fields: public-domain Hiroshige prints, darkened for white type */
+.artfield { position: absolute; inset: 0; overflow: hidden; background: #1b2028; }
+.artfield img { width: 100%; height: 112%; object-fit: cover; transform-origin: 50% 50%; }
+@media (prefers-reduced-motion: no-preference) {
+  .artfield img { animation: artdrift 52s ease-in-out infinite alternate; }
+  @keyframes artdrift { from { transform: scale(1); } to { transform: scale(1.07) translateY(-1.5%); } }
+}
+.facts-stage .artfield img { object-position: 50% 56%; filter: saturate(0.85) contrast(1.03) brightness(0.48); }
+.closing .artfield img { object-position: 50% 38%; filter: saturate(0.82) contrast(1.04) brightness(0.52); }
+.speck {
+  position: absolute; border-radius: 50%;
+  background: #e9d9b0;
+  box-shadow: 0 0 6px 1px rgba(233,217,176,0.5);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .speck { animation: twinkle ease-in-out infinite alternate; }
+  @keyframes twinkle { from { opacity: 0.15; } to { opacity: 0.9; } }
+}
+
+/* ---------------- hero (centered, symmetric) ---------------- */
+.hero {
+  position: relative;
+  min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: calc(58px + 14px + clamp(40px, 8vh, 90px)) 24px 0;
+  overflow: hidden;
+  color: #f4f4f1;
+  text-align: center;
+}
+.hero .vfield .scrim {
+  background:
+    radial-gradient(74% 56% at 50% 24%, rgba(24,38,52,0.52), transparent 76%),
+    linear-gradient(to bottom, rgba(24,38,52,0.38), rgba(24,38,52,0.1) 36%, rgba(24,38,52,0) 52%),
+    linear-gradient(to bottom, rgba(237,236,231,0) 72%, rgba(237,236,231,0.65) 90%, #edece7 99%);
+}
+.hero-inner { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
+.hero h1 {
+  font-size: clamp(42px, 6.2vw, 92px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  color: #fbfaf7;
+  text-shadow: 0 2px 28px rgba(10,14,18,0.4);
+}
+.hero h1 .accent {
+  background: linear-gradient(100deg, #a8cce4, #e8f2f9 50%, #a8cce4);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(16,28,40,0.45));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero h1 .accent { animation: sheen 6s ease-in-out infinite; }
+  @keyframes sheen { 0%, 100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
+}
+.hero-sub {
+  margin-top: 20px;
+  font-size: clamp(16px, 1.5vw, 19px);
+  color: rgba(244,244,241,0.8);
+  max-width: 52ch;
+}
+.hero-cta { margin-top: 28px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero-brew {
+  margin: 16px auto 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(680px, 92vw);
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), var(--sh-sm);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border-radius: 999px;
+  padding: 8px 9px 8px 16px;
+}
+.hero-brew code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text);
+  opacity: 0.85;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+.hero-brew .brew-copy {
+  flex: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fbfaf7;
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.hero-brew .brew-copy:hover { background: var(--accent-h); }
+@media (max-width: 700px) { .hero-brew { border-radius: 16px; flex-wrap: wrap; padding: 10px 12px; } }
+.hero .btn.ghost {
+  color: #fbfaf7;
+  box-shadow: inset 0 0 0 1px rgba(251,250,247,0.45);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  background: rgba(251,250,247,0.08);
+}
+.hero .btn.ghost:hover { background: rgba(251,250,247,0.16); }
+
+/* the hero stage: a command-center moment, layered panels with depth */
+.hero-stage {
+  position: relative; z-index: 2;
+  width: min(1060px, 100%);
+  height: 470px;
+  margin-top: clamp(32px, 5vh, 60px);
+}
+.hero-stage .glow {
+  position: absolute; inset: -6% -14%;
+  background: radial-gradient(50% 55% at 50% 42%, rgba(109,156,187,0.4), transparent 70%);
+  filter: blur(10px);
+}
+.stage-layer { position: absolute; will-change: transform; }
+.stage-chat { left: 50%; top: 34px; transform: translateX(-50%); width: min(540px, 92vw); z-index: 2; }
+.stage-chat .window { text-align: left; }
+.stage-chat .window-body { padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 12px; }
+.stage-a { left: 0; top: 10px; z-index: 3; }
+.stage-b { right: 0; top: 210px; z-index: 3; }
+.stage-toast { left: 50%; transform: translateX(-50%); bottom: 8px; z-index: 4; }
+
+.mini-card {
+  width: 264px;
+  background: var(--card); color: var(--text);
+  border-radius: 16px; padding: 15px 17px;
+  border: 1px solid rgba(255,255,255,0.7);
+  box-shadow: 0 18px 44px rgba(10,14,18,0.32);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.mini-card.tilt-l { transform: rotate(-2.5deg); }
+.mini-card.tilt-r { transform: rotate(2deg); width: 240px; }
+.mini-top { display: flex; align-items: center; gap: 8px; }
+.mini-name { font-weight: 700; font-size: 13.5px; letter-spacing: -0.01em; }
+.mini-card .live-badge { margin-left: auto; }
+.mini-card .agent-line { font-size: 11.5px; }
+
+.toast {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: var(--card); color: var(--text);
+  border-radius: 999px; padding: 11px 20px;
+  border: 1px solid rgba(255,255,255,0.7);
+  box-shadow: 0 18px 44px rgba(10,14,18,0.32);
+  font-size: 13.5px; font-weight: 600;
+  white-space: nowrap;
+  opacity: 0; transform: translateY(14px) scale(0.95);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.toast.show { opacity: 1; transform: none; }
+.toast .ok {
+  width: 18px; height: 18px; border-radius: 50%; flex: none;
+  background: rgba(79,154,126,0.15); color: var(--green);
+  display: grid; place-items: center; font-size: 11px; font-weight: 700;
+}
+.toast .mono { color: var(--muted); font-weight: 500; }
+
+/* gentle float, offset phases per layer */
+@media (prefers-reduced-motion: no-preference) {
+  .stage-a .mini-card { animation: bob1 7s ease-in-out infinite alternate; }
+  .stage-b .mini-card { animation: bob2 8.5s ease-in-out infinite alternate; }
+  @keyframes bob1 { from { transform: rotate(-2.5deg) translateY(0); } to { transform: rotate(-2deg) translateY(-9px); } }
+  @keyframes bob2 { from { transform: rotate(2deg) translateY(0); } to { transform: rotate(1.4deg) translateY(-7px); } }
+}
+@media (max-width: 900px) {
+  .hero-stage { height: auto; display: flex; flex-direction: column; align-items: center; gap: 14px; padding-bottom: 8px; }
+  .stage-layer { position: static; transform: none !important; }
+  .stage-chat { width: 100%; }
+  .stage-b { display: none; }
+  .mini-card.tilt-l { transform: none; width: 100%; }
+  .stage-toast { align-self: center; }
+}
+
+/* ---------------- app window chrome ---------------- */
+.window {
+  color: var(--text);
+  background: var(--card);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.7);
+  box-shadow: 0 40px 90px rgba(10, 14, 18, 0.5), 0 4px 18px rgba(10,14,18,0.3);
+  overflow: hidden;
+  text-align: left;
+}
+.window-bar {
+  height: 42px; display: flex; align-items: center; gap: 7px;
+  padding: 0 16px; border-bottom: 1px solid var(--sep);
+  background: rgba(237,236,231,0.5);
+}
+.traffic { width: 11px; height: 11px; border-radius: 50%; }
+.traffic.r { background: #e0695e; } .traffic.y { background: #e0b154; } .traffic.g { background: #7cb56b; }
+.window-title { flex: 1; text-align: center; font-size: 12px; color: var(--muted); margin-right: 46px; }
+.window-body { padding: 26px 28px 30px; }
+
+/* dashboard preview */
+.greet { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+.greet-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+.tile {
+  background: var(--bg); border-radius: 12px; padding: 14px 16px;
+  border: 1px solid rgba(51,56,61,0.06);
+  transition: transform 0.3s var(--ease), box-shadow 0.3s;
+}
+.tile:hover { transform: translateY(-3px); box-shadow: var(--sh-md); }
+.tile-val { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tile-val.danger { color: var(--red); }
+.tile-label { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.tok-card { margin-top: 12px; background: var(--bg); border-radius: 12px; padding: 14px 16px 12px; border: 1px solid rgba(51,56,61,0.06); }
+.tok-title { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.tok-head { display: flex; align-items: baseline; gap: 8px; margin-top: 3px; }
+.tok-total { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.tok-sub { font-size: 11.5px; color: var(--muted); }
+.tok-chart svg { width: 100%; height: 58px; }
+.draw path.line { stroke-dasharray: 900; stroke-dashoffset: 900; }
+.draw.in path.line { animation: draw 1.8s var(--ease) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .draw path.line { stroke-dashoffset: 0; } }
+@media (max-width: 620px) {
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+  .window-body { padding: 18px; }
+}
+
+/* ---------------- section rhythm (all centered) ---------------- */
+.chapter { padding: clamp(90px, 13vh, 160px) 0; }
+.chapter-head { text-align: center; max-width: 720px; margin: 0 auto 54px; }
+.chapter-head h2 {
+  font-size: clamp(32px, 4vw, 54px);
+  letter-spacing: -0.03em; line-height: 1.05; font-weight: 700;
+}
+.chapter-head .lede { margin: 16px auto 0; font-size: 17px; color: var(--muted); max-width: 54ch; }
+.eyebrow {
+  display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+}
+
+/* ---------------- manifesto (word-by-word reveal) ---------------- */
+.manifesto { padding: clamp(120px, 18vh, 210px) 0; text-align: center; }
+.manifesto p {
+  font-size: clamp(26px, 3.6vw, 50px);
+  line-height: 1.18;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  max-width: 24ch;
+  margin: 0 auto;
+}
+.manifesto .w { display: inline-block; opacity: 0.12; transform: translateY(0.2em); transition: opacity 0.5s var(--ease), transform 0.5s var(--ease); }
+.manifesto .w.on { opacity: 1; transform: none; }
+.manifesto .w.dim.on { opacity: 0.3; }
+@media (prefers-reduced-motion: reduce) { .manifesto .w { opacity: 1; transform: none; } .manifesto .w.dim { opacity: 0.3; } }
+
+/* ---------------- agents: symmetric trio, center featured ---------------- */
+.agents-grid {
+  display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 16px;
+  align-items: stretch; max-width: 1060px; margin: 0 auto;
+}
+@media (max-width: 900px) { .agents-grid { grid-template-columns: 1fr; max-width: 560px; } }
+.agent-card {
+  background: var(--card); border-radius: 20px; padding: 24px;
+  border: 1px solid rgba(255,255,255,0.65); box-shadow: var(--sh-md);
+  display: flex; flex-direction: column; gap: 12px;
+  transition: transform 0.35s var(--ease), box-shadow 0.35s;
+}
+.agent-card:hover { transform: translateY(-6px); box-shadow: var(--sh-lg); }
+.agent-card.featured {
+  padding: 30px 26px;
+  box-shadow: var(--sh-lg);
+  border-color: rgba(109,156,187,0.5);
+}
+@media (min-width: 901px) { .agent-card.featured { margin: -18px 0; } }
+.agent-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--green); background: rgba(79,154,126,0.12);
+  padding: 4px 10px; border-radius: 999px;
+  margin-left: auto;
+}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+@media (prefers-reduced-motion: no-preference) {
+  .live-dot { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+}
+.agent-name { font-weight: 700; font-size: 16.5px; letter-spacing: -0.01em; }
+.branch-chip { font-family: var(--mono); font-size: 11.5px; color: var(--muted); background: var(--tint); padding: 3px 10px; border-radius: 999px; }
+.agent-line { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+.agent-line b { color: var(--text); font-weight: 600; }
+.agent-meter { display: flex; gap: 4px; margin-top: auto; padding-top: 16px; }
+.agent-meter span { height: 24px; flex: 1; border-radius: 4px; background: rgba(74,119,153,0.16); transition: background 0.4s; }
+.agent-meter span.hot { background: var(--accent); }
+@media (prefers-reduced-motion: no-preference) {
+  .agent-meter span.hot { animation: meter 2.4s ease-in-out infinite; }
+  .agent-meter span.hot:nth-child(odd) { animation-delay: 1.2s; }
+  @keyframes meter { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+}
+
+/* ---------------- chat: centered stage ---------------- */
+.chat-stage { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.bubble {
+  align-self: flex-end;
+  background: var(--accent); color: #fbfaf7;
+  border-radius: 18px 18px 6px 18px;
+  padding: 12px 18px; font-size: 15px; max-width: 85%;
+  box-shadow: var(--sh-sm);
+}
+.bubble.agent {
+  align-self: flex-start; background: var(--card); color: var(--text);
+  border-radius: 18px 18px 18px 6px;
+  border: 1px solid rgba(255,255,255,0.65);
+}
+.bubble.agent .think { color: var(--muted); font-size: 13.5px; }
+.composer {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--glass); border: 1px solid var(--glass-edge);
+  border-radius: 999px; padding: 10px 12px 10px 22px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), var(--sh-md);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+.composer-text { flex: 1; font-size: 15px; color: var(--text); min-height: 22px; }
+.composer-text .caret { display: inline-block; width: 2px; height: 17px; background: var(--accent); vertical-align: -3px; margin-left: 1px; }
+@media (prefers-reduced-motion: no-preference) {
+  .composer-text .caret { animation: blink 1.05s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+}
+.wave { display: flex; align-items: center; gap: 3px; height: 40px; padding: 0 15px; background: rgba(74,119,153,0.12); border-radius: 999px; }
+.wave i { width: 3px; border-radius: 2px; background: var(--accent); height: 8px; }
+@media (prefers-reduced-motion: no-preference) {
+  .wave i { animation: wave 1.1s ease-in-out infinite; }
+  .wave i:nth-child(1) { animation-delay: 0s; } .wave i:nth-child(2) { animation-delay: 0.15s; }
+  .wave i:nth-child(3) { animation-delay: 0.3s; } .wave i:nth-child(4) { animation-delay: 0.45s; }
+  .wave i:nth-child(5) { animation-delay: 0.6s; } .wave i:nth-child(6) { animation-delay: 0.25s; }
+  @keyframes wave { 0%,100% { height: 6px; } 50% { height: 22px; } }
+}
+.send { width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer; background: var(--accent); color: #fbfaf7; display: grid; place-items: center; font-size: 17px; transition: transform 0.25s var(--ease), background 0.25s; }
+.send:hover { transform: scale(1.08); background: var(--accent-h); }
+
+/* ---------------- incident: centered card ---------------- */
+.incident-stage { max-width: 780px; margin: 0 auto; }
+.incident-card {
+  background: var(--card); border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.65); box-shadow: var(--sh-lg);
+  overflow: hidden;
+  transition: transform 0.35s var(--ease);
+}
+.incident-card:hover { transform: translateY(-4px); }
+.incident-head { display: flex; align-items: center; gap: 12px; padding: 18px 26px; border-bottom: 1px solid var(--sep); }
+.incident-kind {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--red); background: var(--redbg); padding: 5px 12px; border-radius: 999px;
+}
+.incident-svc { font-weight: 700; font-size: 16px; }
+.incident-time { margin-left: auto; font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+.incident-body { padding: 24px 26px; }
+.diagnosis { font-size: clamp(18px, 2vw, 22px); font-weight: 650; letter-spacing: -0.015em; line-height: 1.35; }
+.diagnosis .cause { color: var(--red); }
+.mem-curve { margin-top: 20px; }
+.mem-curve svg { width: 100%; height: 88px; }
+.mem-label { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 6px; }
+.loglines { margin-top: 18px; background: var(--bg); border-radius: 12px; padding: 14px 18px; border: 1px solid rgba(51,56,61,0.06); }
+.loglines code { display: block; font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.75; white-space: pre-wrap; }
+.loglines code.err { color: var(--red); }
+
+/* ---------------- facts over footage (centered) ---------------- */
+.facts-stage {
+  position: relative; overflow: hidden;
+  padding: clamp(110px, 17vh, 200px) 0;
+  color: #f4f4f1;
+  text-align: center;
+}
+.facts-stage .vfield .scrim {
+  background:
+    radial-gradient(70% 60% at 50% 32%, rgba(16,20,26,0.42), transparent 74%),
+    radial-gradient(110% 100% at 50% 50%, transparent 40%, rgba(16,20,26,0.45) 100%);
+}
+.facts-stage .wrap { position: relative; z-index: 2; }
+.facts-stage h2 {
+  font-size: clamp(34px, 4.4vw, 60px);
+  letter-spacing: -0.03em; line-height: 1.04; font-weight: 700;
+  color: #fbfaf7;
+  margin-bottom: 50px;
+  text-shadow: 0 2px 24px rgba(10,14,18,0.4);
+}
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 980px; margin: 0 auto; }
+@media (max-width: 760px) { .facts { grid-template-columns: 1fr; max-width: 480px; } }
+.fact {
+  padding: 26px 24px;
+  border-radius: 20px;
+  background: rgba(20,25,32,0.42);
+  border: 1px solid rgba(251,250,247,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  transition: transform 0.35s var(--ease), background 0.35s;
+}
+.fact:hover { transform: translateY(-6px); background: rgba(20,25,32,0.55); }
+@media (prefers-reduced-transparency: reduce) {
+  .fact { background: rgba(20,25,32,0.92); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+.fact h3 { font-size: 20px; letter-spacing: -0.02em; font-weight: 700; color: #fbfaf7; }
+.fact p { margin-top: 8px; font-size: 14.5px; color: rgba(244,244,241,0.74); }
+
+/* ---------------- skills: centered column ---------------- */
+.skill-ico {
+  width: 42px; height: 42px; border-radius: 12px; flex: none;
+  display: grid; place-items: center; font-size: 18px; color: #fbfaf7;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.skill-meta { flex: 1; min-width: 0; }
+.skill-name { display: block; font-weight: 650; font-size: 15.5px; }
+.skill-name .pkg { font-family: var(--mono); font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+.skill-desc { display: block; font-size: 13px; color: var(--muted); }
+.install {
+  border: 0; cursor: pointer; font: inherit; font-size: 13.5px; font-weight: 600;
+  padding: 9px 18px; border-radius: 999px;
+  background: var(--accent); color: #fbfaf7;
+  transition: background 0.35s, color 0.35s, box-shadow 0.35s, transform 0.25s var(--ease);
+  min-width: 106px;
+}
+.install:hover { transform: scale(1.04); }
+.install.done { background: rgba(79,154,126,0.13); color: var(--green); box-shadow: inset 0 0 0 1px rgba(79,154,126,0.35); transform: none; }
+
+/* ---------------- closing ---------------- */
+.closing {
+  position: relative;
+  background: var(--ink-bg);
+  color: var(--ink-text);
+  padding: clamp(120px, 17vh, 200px) 0 0;
+  overflow: hidden;
+  text-align: center;
+}
+.closing .vfield .scrim {
+  background: linear-gradient(to bottom, rgba(24,28,34,0.3) 0%, rgba(24,28,34,0.08) 45%, rgba(24,28,34,0.72) 100%);
+}
+.closing-inner { position: relative; z-index: 2; }
+.closing h2 {
+  font-size: clamp(40px, 6.4vw, 92px);
+  letter-spacing: -0.035em; line-height: 1.02; font-weight: 700;
+  text-shadow: 0 2px 28px rgba(10,14,18,0.45);
+}
+.closing h2 .zero { color: #6fbf9f; }
+.closing .lede { margin: 20px auto 0; font-size: 18px; color: rgba(233,234,230,0.75); max-width: 52ch; }
+.closing .hero-cta { justify-content: center; margin-top: 32px; }
+.closing .btn { background: #dfe5e9; color: #171a1f; font-weight: 700; }
+.closing .btn:hover { background: #fbfaf7; }
+.closing .fine { margin-top: 16px; font-size: 13px; color: rgba(233,234,230,0.6); }
+.closing .brew {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(720px, 92vw);
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 980px;
+  padding: 9px 10px 9px 18px;
+}
+.closing .brew-label { font-size: 12px; color: rgba(233,234,230,0.55); white-space: nowrap; }
+.closing .brew code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: rgba(233,234,230,0.9);
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+.closing .brew-copy {
+  flex: none;
+  font-size: 12px;
+  color: #e9eae6;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 980px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.closing .brew-copy:hover { background: rgba(255,255,255,0.2); }
+@media (max-width: 700px) {
+  .closing .brew { border-radius: 18px; flex-wrap: wrap; padding: 12px 14px; }
+}
+footer {
+  position: relative; z-index: 2;
+  margin-top: clamp(90px, 13vh, 150px);
+  border-top: 1px solid rgba(233,234,230,0.14);
+  padding: 30px 0 40px;
+}
+.foot-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; font-size: 13.5px; color: rgba(233,234,230,0.6); }
+.foot-row a { transition: color 0.25s; }
+.foot-row a:hover { color: var(--ink-text); }
+.foot-spacer { flex: 1; }
+
+/* ---------------- voice (two-phase dictation) ---------------- */
+.voice-stage { position: relative; }
+.voice-stage .composer-text .fixed { color: var(--text); }
+.voice-stage .composer-text, .voice-stage .bubble { white-space: pre-line; text-align: left; }
+.voice-stage .composer-text.polished { animation: polish-glow 0.6s ease; }
+@keyframes polish-glow {
+  0% { text-shadow: 0 0 14px rgba(74, 119, 153, 0.55); }
+  100% { text-shadow: none; }
+}
+.polish-pill {
+  position: absolute;
+  top: -14px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 980px;
+  background: var(--card, #fbfaf7);
+  border: 1px solid rgba(51, 56, 61, 0.14);
+  box-shadow: 0 4px 16px rgba(51, 56, 61, 0.1);
+  font: 600 11.5px/1 ui-monospace, "SF Mono", Menlo, monospace;
+  color: #4a7799;
+}
+.polish-pill .spark { color: #4a7799; }
+.polish-pill[hidden] { display: none; }
+.voice-caption {
+  margin-top: 26px;
+  text-align: center;
+  color: var(--muted, rgba(51,56,61,0.6));
+  font: 500 12px/1.7 ui-monospace, "SF Mono", Menlo, monospace;
+}
+.polish-pill.listening { color: #c05b4a; }
+.polish-pill .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #c05b4a;
+  animation: listen-pulse 1.2s ease-in-out infinite;
+}
+@keyframes listen-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
+
+/* ---------------- copilots ---------------- */
+.copilot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 14px;
+}
+.copilot-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 13px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid rgba(51, 56, 61, 0.12);
+  border-radius: 16px;
+  background: rgba(251, 250, 247, 0.7);
+}
+.copilot-mark {
+  grid-row: 1 / 3;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #fbfaf7;
+  box-shadow: inset 0 0 0 1px rgba(51, 56, 61, 0.1);
+  color: #33383d;
+}
+.copilot-name { font-weight: 700; font-size: 16px; letter-spacing: -0.015em; }
+.copilot-modes { margin-left: 10px; color: #4a7799; font: 600 11px ui-monospace, "SF Mono", Menlo, monospace; }
+.copilot-note { grid-column: 2; margin-top: 3px; color: var(--muted, rgba(51,56,61,0.6)); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="navbar">
+    <a class="brand" href="#">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      Portside
+    </a>
+    <div class="nav-links">
+      <a href="#agents">Agents</a>
+      <a href="#voice">Voice</a>
+      <a href="#memory">Flight log</a>
+    </div>
+    <span class="nav-cta"><a class="btn small" href="#get">Download for macOS</a></span>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="vfield" aria-hidden="true">
+    <div class="sky-base"></div>
+    <div class="sun"></div>
+    <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div><div class="cloud c4"></div><div class="cloud c5"></div>
+    <div class="artsea">
+      <!-- Katsushika Hokusai, "The Great Wave off Kanagawa" (c. 1831). Public domain, Wikimedia Commons. -->
+      <img src="assets/wave.jpg" alt="" />
+      <div class="mist"></div>
+    </div>
+    <div class="scrim"></div>
+  </div>
+
+  <div class="hero-inner">
+    <h1 class="rv">The cockpit for<br />your <span class="accent">agents</span>.</h1>
+    <p class="hero-sub rv rv-d1">Every agent on your Mac, one screen. Steer by voice. Ship. Runs on the Claude Code or Codex plan you already pay for.</p>
+    <div class="hero-cta rv rv-d2">
+      <a class="btn" href="#get">Download for macOS</a>
+      <a class="btn ghost" href="#agents">See how it works</a>
+    </div>
+  </div>
+
+  <div class="hero-stage rv rv-d3" id="heroStage" aria-hidden="true">
+    <div class="glow"></div>
+
+    <div class="stage-layer stage-a" data-depth="22">
+      <div class="mini-card tilt-l">
+        <div class="mini-top">
+          <span class="mini-name">claude · ledger-indexer</span>
+          <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+        </div>
+        <div class="agent-line">ran <b>cargo test reconcile</b> · 47s ago</div>
+      </div>
+    </div>
+
+    <div class="stage-layer stage-b" data-depth="30">
+      <div class="mini-card tilt-r">
+        <div class="mini-top">
+          <span class="mini-name">codex · web-dashboard</span>
+          <span class="live-badge" style="color:var(--amber);background:rgba(176,129,60,0.12)"><span class="live-dot" style="background:var(--amber)"></span>IDLE</span>
+        </div>
+        <div class="agent-line">waiting on your review · 12 min</div>
+      </div>
+    </div>
+
+    <div class="stage-layer stage-chat" data-depth="10">
+      <div class="window">
+        <div class="window-bar">
+          <span class="traffic r"></span><span class="traffic y"></span><span class="traffic g"></span>
+          <span class="window-title">Portside · api-gateway</span>
+        </div>
+        <div class="window-body">
+          <div class="bubble agent"><span class="think">Good evening. Three agents on deck. What are we building?</span></div>
+          <div class="bubble" id="heroUserBubble" hidden>bring up the api and the indexer</div>
+          <div class="bubble agent" id="heroReply" hidden>Both running. <b>:3000</b> and <b>:8090</b> healthy. I'm watching them.</div>
+          <div class="composer">
+            <span class="composer-text"><span id="heroTyped"></span><span class="caret" aria-hidden="true"></span></span>
+            <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <button class="send" aria-label="Send">&#8593;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</header>
+
+<!-- ================= MANIFESTO ================= -->
+<section class="manifesto">
+  <div class="wrap">
+    <p id="manifesto">You're running four agents in six terminal tabs. <span class="dim">One finished an hour ago. One is stuck waiting for a yes. You have no idea which.</span></p>
+  </div>
+</section>
+
+<!-- ================= AGENTS ================= -->
+<section class="chapter" id="agents">
+  <div class="wrap">
+    <div class="chapter-head rv">
+      <span class="eyebrow">Every agent, one screen</span>
+      <h2>Watch them all work. Live.</h2>
+      <p class="lede">Every agent, whoever spawned it, live. The moment one needs you, it's on your desk &mdash; nothing stalls in a hidden tab.</p>
+    </div>
+    <div class="agents-grid">
+      <div class="agent-card rv rv-d1">
+        <div class="agent-top">
+          <span class="agent-name">claude · portside</span>
+          <span class="branch-chip">master</span>
+          <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+        </div>
+        <div class="agent-line">writing <b>landing/index.html</b></div>
+        <div class="agent-meter" aria-hidden="true">
+          <span></span><span class="hot"></span><span></span><span class="hot"></span><span class="hot"></span><span></span><span class="hot"></span><span></span>
+        </div>
+      </div>
+      <div class="agent-card featured rv">
+        <div class="agent-top">
+          <span class="agent-name">claude · ledger-indexer</span>
+          <span class="branch-chip">feat/backfill</span>
+          <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+        </div>
+        <div class="agent-line" style="margin-top:6px">ran <b>cargo test reconcile</b> · 47s ago</div>
+        <div class="agent-line">editing <b>src/backfill/worker.rs</b></div>
+        <div class="agent-meter" aria-hidden="true">
+          <span></span><span class="hot"></span><span class="hot"></span><span></span><span class="hot"></span><span></span><span class="hot"></span><span class="hot"></span><span></span><span class="hot"></span>
+        </div>
+      </div>
+      <div class="agent-card rv rv-d2">
+        <div class="agent-top">
+          <span class="agent-name">codex · web-dashboard</span>
+          <span class="branch-chip">main</span>
+          <span class="live-badge" style="color:var(--amber);background:rgba(176,129,60,0.12)"><span class="live-dot" style="background:var(--amber)"></span>IDLE</span>
+        </div>
+        <div class="agent-line">waiting on your review · 12 min</div>
+        <div class="agent-meter" aria-hidden="true">
+          <span class="hot"></span><span></span><span></span><span class="hot"></span><span></span><span></span><span class="hot"></span><span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VOICE ================= -->
+<section class="chapter" id="voice">
+  <div class="wrap">
+    <div class="chapter-head rv">
+      <span class="eyebrow">Type, or talk &mdash; it fixes itself</span>
+      <h2>Just talk to it.</h2>
+      <p class="lede">Hold <b>&#8984;D</b>, speak. Watch.</p>
+    </div>
+    <div class="chat-stage voice-stage rv rv-d1">
+      <div class="bubble agent"><span class="think">Good evening. What are we shipping?</span></div>
+      <div class="bubble" id="vUserBubble" hidden></div>
+      <div class="bubble agent" id="vReply" hidden></div>
+      <div class="composer">
+        <span class="composer-text"><span id="voiceTyped"></span><span class="caret" aria-hidden="true"></span></span>
+        <span class="wave on" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <button class="send" aria-label="Send">&#8593;</button>
+      </div>
+      <div class="polish-pill listening" id="listenPill" hidden><span class="dot" aria-hidden="true"></span>holding &#8984;D&hellip;</div>
+      <div class="polish-pill" id="polishPill" hidden><span class="spark" aria-hidden="true">&#10022;</span>polished &middot; 1.3s</div>
+    </div>
+    <p class="voice-caption rv rv-d2">~5% word error rate on our own recorded corpus &middot; polish is one agent turn that read your repo &middot; audio never leaves the Mac</p>
+  </div>
+</section>
+
+<!-- ================= MEMORY / INCIDENTS ================= -->
+<section class="chapter" id="memory">
+  <div class="wrap">
+    <div class="chapter-head rv">
+      <h2>When something dies at 2 AM, Portside knows why.</h2>
+      <p class="lede">Your agent said done. The worker it started died at 02:14, silently. Portside hands you the cause in one sentence.</p>
+    </div>
+    <div class="incident-stage rv rv-d1">
+      <div class="incident-card">
+        <div class="incident-head">
+          <span class="incident-kind">silent death</span>
+          <span class="incident-svc">ledger-indexer</span>
+          <span class="incident-time">02:14 AM</span>
+        </div>
+        <div class="incident-body">
+          <p class="diagnosis"><span class="cause">OOM-killed.</span> Memory climbed steadily for 40 minutes while the batch size doubled on every retry.</p>
+          <div class="mem-curve draw" data-draw aria-hidden="true">
+            <svg viewBox="0 0 700 80" preserveAspectRatio="none">
+              <path d="M0,66 C80,64 140,60 210,54 C300,46 380,38 460,26 C540,14 610,8 660,6 L672,6 L672,80 L0,80 Z" fill="#c05b4a" opacity="0.08"/>
+              <path class="line" d="M0,66 C80,64 140,60 210,54 C300,46 380,38 460,26 C540,14 610,8 660,6 L672,6" fill="none" stroke="#c05b4a" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="672" cy="6" r="4.5" fill="#c05b4a"/>
+              <line x1="672" y1="6" x2="672" y2="76" stroke="#c05b4a" stroke-width="1" stroke-dasharray="3 4" opacity="0.6"/>
+            </svg>
+            <div class="mem-label">rss 512 MB → 7.9 GB · 01:34 to 02:14</div>
+          </div>
+          <div class="loglines" aria-hidden="true">
+            <code>02:13:58 worker  retrying batch 4096 → 8192</code>
+            <code>02:14:07 worker  allocating slab for 8192 rows</code>
+            <code class="err">02:14:11 kernel  low swap: killing largest process: ledger-indexer (pid 48112)</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LOCAL FIRST (over footage) ================= -->
+<section class="facts-stage">
+  <div class="vfield artfield" aria-hidden="true">
+    <!-- Utagawa Hiroshige, "Sudden Shower over Shin-Ohashi Bridge and Atake" (1857). Public domain, Wikimedia Commons. -->
+    <img src="assets/rain.jpg" alt="" />
+    <div class="scrim"></div>
+  </div>
+  <div class="wrap">
+    <h2 class="rv">Your machine. Your data.</h2>
+    <div class="facts">
+      <div class="fact rv"><h3>No cloud.</h3><p>Everything Portside keeps lives on your Mac. Logs never leave the machine.</p></div>
+      <div class="fact rv rv-d1"><h3>No accounts.</h3><p>Download it, open it, done. There is nothing to sign up for.</p></div>
+      <div class="fact rv rv-d2"><h3>No fan noise.</h3><p>Capture stays under 2% CPU with a disk cap you set. You forget it's there.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COPILOTS ================= -->
+<section class="chapter" id="copilots">
+  <div class="wrap">
+    <div class="chapter-head rv">
+      <h2>Bring your own copilot.</h2>
+      <p class="lede">Claude Code and Codex are both first-class. Same cockpit, same chat, same voice, same flight log — pick per project, switch anytime.</p>
+    </div>
+    <div class="copilot-grid rv rv-d1">
+      <div class="copilot-card">
+        <span class="copilot-mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24"><g stroke="#d97757" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="8.8" x2="12" y2="2.4" transform="rotate(0 12 12)"/><line x1="12" y1="8.8" x2="12" y2="4.8" transform="rotate(30 12 12)"/><line x1="12" y1="8.8" x2="12" y2="2.8" transform="rotate(60 12 12)"/><line x1="12" y1="8.8" x2="12" y2="4.4" transform="rotate(90 12 12)"/><line x1="12" y1="8.8" x2="12" y2="2.4" transform="rotate(120 12 12)"/><line x1="12" y1="8.8" x2="12" y2="4.8" transform="rotate(150 12 12)"/><line x1="12" y1="8.8" x2="12" y2="2.8" transform="rotate(180 12 12)"/><line x1="12" y1="8.8" x2="12" y2="4.4" transform="rotate(210 12 12)"/><line x1="12" y1="8.8" x2="12" y2="2.4" transform="rotate(240 12 12)"/><line x1="12" y1="8.8" x2="12" y2="4.8" transform="rotate(270 12 12)"/><line x1="12" y1="8.8" x2="12" y2="2.8" transform="rotate(300 12 12)"/><line x1="12" y1="8.8" x2="12" y2="4.4" transform="rotate(330 12 12)"/></g></svg>
+        </span>
+        <span class="copilot-meta">
+          <span class="copilot-name">Claude Code</span>
+          <span class="copilot-modes">plan &middot; ask &middot; build</span>
+        </span>
+        <span class="copilot-note">Your Anthropic subscription, no API key.</span>
+      </div>
+      <div class="copilot-card">
+        <span class="copilot-mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>
+        </span>
+        <span class="copilot-meta">
+          <span class="copilot-name">Codex</span>
+          <span class="copilot-modes">plan &middot; workspace &middot; full</span>
+        </span>
+        <span class="copilot-note">Your OpenAI subscription, same cockpit.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CLOSING ================= -->
+<section class="closing" id="get">
+  <div class="vfield artfield" id="duskField" aria-hidden="true">
+    <!-- Utagawa Hiroshige, "Eight Views of Kanazawa at Night" triptych (1857). Public domain, Cleveland Museum of Art via Wikimedia Commons. -->
+    <img src="assets/night.jpg" alt="" />
+    <div class="scrim"></div>
+  </div>
+  <div class="wrap closing-inner">
+    <h2 class="rv">Runs on your own Claude or Codex.<br /><span class="zero">$0 extra.</span></h2>
+    <p class="lede rv rv-d1">It adds the cockpit, not the cost.</p>
+    <div class="hero-cta rv rv-d2">
+      <a class="btn" href="https://github.com/portside-app/portside-releases/releases/latest/download/Portside_aarch64.dmg" id="dmgLink">Download for macOS</a>
+    </div>
+    <div class="brew rv rv-d2">
+      <span class="brew-label">or with Homebrew</span>
+      <code id="brewCmd">brew install --cask portside-app/portside/portside &amp;&amp; xattr -dr com.apple.quarantine /Applications/Portside.app</code>
+      <button class="brew-copy" id="brewCopy" title="Copy command">Copy</button>
+    </div>
+    <p class="fine rv rv-d3">Free for early adopters. macOS 14 or later, Apple silicon &amp; Intel. Updates itself.<br />The build is unsigned for now — the Homebrew one-liner clears macOS's warning; for the direct download use System&nbsp;Settings → Privacy&nbsp;&amp;&nbsp;Security → Open&nbsp;Anyway once.</p>
+
+    <footer>
+      <div class="foot-row">
+        <span>&copy; 2026 Portside</span>
+        <span class="foot-spacer"></span>
+        <a href="#">GitHub</a>
+        <a href="#">Docs</a>
+        <a href="#">Privacy</a>
+      </div>
+    </footer>
+  </div>
+</section>
+
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* distant harbor lights in the closing dusk field */
+  const dusk = document.getElementById("duskField");
+  if (dusk) {
+    for (let i = 0; i < 46; i++) {
+      const s = document.createElement("span");
+      s.className = "speck";
+      const size = 1.5 + Math.random() * 2;
+      s.style.width = s.style.height = size + "px";
+      s.style.left = Math.random() * 100 + "%";
+      s.style.top = 58 + Math.random() * 34 + "%";
+      s.style.opacity = String(0.2 + Math.random() * 0.6);
+      s.style.animationDuration = (1.6 + Math.random() * 3.4) + "s";
+      s.style.animationDelay = (-Math.random() * 4) + "s";
+      dusk.insertBefore(s, dusk.lastElementChild);
+    }
+  }
+
+
+  /* voice demo: hold, speak, raw lands, polish rewrites — on a loop */
+  const vTyped = document.getElementById("voiceTyped");
+  const vPill = document.getElementById("polishPill");
+  const vListen = document.getElementById("listenPill");
+  if (vTyped) {
+    const takes = [
+      ["umm so first chek the ttl in click house then uhh restart the worker and hmm also bump tokio to one point forty",
+       "1. Check the TTL in ClickHouse\n2. Restart the worker\n3. Bump tokio to 1.40",
+       "TTL is 3600s. Worker restarted. tokio 1.40 — cargo check green."],
+      ["add a use effect that polls agent activity every four seconds",
+       "Add a useEffect that polls agentActivity every 4s.",
+       "Done. Cleanup on unmount included."],
+    ];
+    let take = 0;
+    const stage = vTyped.closest(".voice-stage");
+    const wave = stage.querySelector(".wave");
+    const vBubble = document.getElementById("vUserBubble");
+    const vReply = document.getElementById("vReply");
+    const play = () => {
+      const [raw, polished, reply] = takes[take];
+      take = (take + 1) % takes.length;
+      vTyped.textContent = ""; vPill.hidden = true; vListen.hidden = false;
+      vBubble.hidden = true; vReply.hidden = true;
+      wave.classList.add("on");
+      vTyped.parentElement.classList.remove("polished");
+      let i = 0;
+      const step = () => {
+        if (i <= raw.length) { vTyped.textContent = raw.slice(0, i++); setTimeout(step, 30); }
+        else {
+          vListen.hidden = true;
+          wave.classList.remove("on");
+          setTimeout(() => {
+            vTyped.textContent = polished;
+            vTyped.parentElement.classList.add("polished");
+            vPill.hidden = false;
+            setTimeout(() => {
+              // send: the polished line becomes the message
+              vBubble.textContent = polished;
+              vBubble.hidden = false;
+              vTyped.textContent = "";
+              vTyped.parentElement.classList.remove("polished");
+              vPill.hidden = true;
+              setTimeout(() => {
+                vReply.textContent = reply;
+                vReply.hidden = false;
+                setTimeout(play, 3400);
+              }, 900);
+            }, 1400);
+          }, 1300);
+        }
+      };
+      setTimeout(step, 600);
+    };
+    if (reduce) {
+      vBubble.textContent = takes[0][1]; vBubble.hidden = false;
+      vReply.textContent = takes[0][2]; vReply.hidden = false;
+    }
+    else {
+      const vio = new IntersectionObserver((es) => {
+        for (const e of es) if (e.isIntersecting) { play(); vio.disconnect(); }
+      }, { threshold: 0.5 });
+      vio.observe(vTyped.closest(".voice-stage"));
+    }
+  }
+
+  /* reveal on view */
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+  }, { threshold: 0.16, rootMargin: "0px 0px -6% 0px" });
+  document.querySelectorAll(".rv").forEach((el) => io.observe(el));
+
+  /* svg line-draw on view (storytelling: the chart arrives) */
+  const dio = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); dio.unobserve(e.target); }
+  }, { threshold: 0.5 });
+  document.querySelectorAll("[data-draw]").forEach((el) => dio.observe(el));
+
+  /* hero stage: pointer parallax between layers (depth = the scene is physical) */
+  const stage = document.getElementById("heroStage");
+  if (stage && !reduce && matchMedia("(pointer: fine)").matches && matchMedia("(min-width: 901px)").matches) {
+    const layers = [...stage.querySelectorAll(".stage-layer")];
+    const hero = document.querySelector(".hero");
+    hero.addEventListener("pointermove", (ev) => {
+      const x = ev.clientX / innerWidth - 0.5;
+      const y = ev.clientY / innerHeight - 0.5;
+      layers.forEach((l) => {
+        const d = +l.dataset.depth;
+        const base = l.classList.contains("stage-chat") || l.classList.contains("stage-toast") ? "translateX(-50%) " : "";
+        l.style.transform = `${base}translate(${(-x * d).toFixed(1)}px, ${(-y * d).toFixed(1)}px)`;
+      });
+    });
+    hero.addEventListener("pointerleave", () => layers.forEach((l) => { l.style.transform = ""; }));
+  }
+
+  /* hero stage: the command plays out (storytelling: type, send, done) */
+  const heroTyped = document.getElementById("heroTyped");
+  const heroBubble = document.getElementById("heroUserBubble");
+  const heroReply = document.getElementById("heroReply");
+  const heroToast = document.getElementById("heroToast"); // removed from the stage
+  if (heroTyped) {
+    const cmd = "bring up the api and the indexer";
+    if (reduce) {
+      heroBubble.hidden = false; heroReply.hidden = false;
+    } else {
+      let i = 0;
+      const step = () => {
+        heroTyped.textContent = cmd.slice(0, ++i);
+        if (i < cmd.length) setTimeout(step, 36 + Math.random() * 40);
+        else setTimeout(() => {
+          heroBubble.hidden = false; heroTyped.textContent = "";
+          setTimeout(() => {
+            heroReply.hidden = false;
+
+          }, 950);
+        }, 650);
+      };
+      setTimeout(step, 1400);
+    }
+  }
+
+  /* manifesto: word-by-word reveal as it enters view */
+  const man = document.getElementById("manifesto");
+  if (man) {
+    const wrapWords = (node, dim) => {
+      const words = node.textContent.trim().split(/\s+/);
+      const frag = document.createDocumentFragment();
+      words.forEach((w, i) => {
+        const s = document.createElement("span");
+        s.className = "w" + (dim ? " dim" : "");
+        s.textContent = w;
+        frag.appendChild(s);
+        frag.appendChild(document.createTextNode(" "));
+      });
+      return frag;
+    };
+    const dimSpan = man.querySelector(".dim");
+    const dimFrag = wrapWords(dimSpan, true);
+    dimSpan.remove();
+    const mainFrag = wrapWords(man, false);
+    man.textContent = "";
+    man.appendChild(mainFrag);
+    man.appendChild(dimFrag);
+    const words = [...man.querySelectorAll(".w")];
+    const mio = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
+      mio.disconnect();
+      words.forEach((w, i) => setTimeout(() => w.classList.add("on"), reduce ? 0 : 120 + i * 60));
+    }, { threshold: 0.6 });
+    mio.observe(man);
+  }
+
+  /* composer typing (storytelling: dictation lands in the box) */
+  const typed = document.getElementById("typed");
+  const bubble = document.getElementById("userBubble");
+  const phrase = "yes, and watch the memory this time";
+  let started = false;
+  const typeIt = () => {
+    if (started) return; started = true;
+    if (reduce) { typed.textContent = phrase; return; }
+    let i = 0;
+    const step = () => {
+      typed.textContent = phrase.slice(0, ++i);
+      if (i < phrase.length) setTimeout(step, 34 + Math.random() * 46);
+      else setTimeout(() => { bubble.hidden = false; typed.textContent = ""; }, 900);
+    };
+    setTimeout(step, 500);
+  };
+  const tio = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { typeIt(); tio.unobserve(e.target); }
+  }, { threshold: 0.5 });
+  tio.observe(document.querySelector(".composer"));
+
+
+})();
+</script>
+</body>
+</html>
